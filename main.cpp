@@ -2,8 +2,11 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <stdlib.h>
 
-int main(int argc, const char* argv[]) {
+//режим encryption/decryption необходимо указать в Edit Configurations
+int main(int argc, const char *argv[]) {
+    int shift = 0;
     if (argc != 3) {
         std::cerr << "Error: Use three parameters\n";
         return 5;
@@ -13,7 +16,7 @@ int main(int argc, const char* argv[]) {
     const std::string mode(argv[1]); // Режим работы
     const std::string file_name(argv[2]); // Имя файла
 
-    if(mode == "encryption") {
+    if (mode == "encryption") {
         // Режимшифрование
         std::string str;
         int pass, result;
@@ -22,18 +25,18 @@ int main(int argc, const char* argv[]) {
         std::cout << "Enter your Password:";
         std::cin >> pass;
 
-        const char* byte_array = str.data();
+        const char *byte_array = str.data();
         const unsigned int size = str.size();
 
         srand(pass);
         std::ofstream file;
         file.open("file", std::ios::binary);
-        for (int i = 0; i < size; i+=2) {
+        for (int i = 0; i < size; i += 2) {
             char symbol1 = byte_array[i];
-            char symbol2 = (i+1 < size) ? byte_array[i+1] : static_cast<char>(0);
-            int g = rand();
+            char symbol2 = (i + 1 < size) ? byte_array[i + 1] : static_cast<char>(0);
+            unsigned int g = rand();
             result = g ^ (static_cast<int>(symbol1) << 8) | g ^ static_cast<int>(symbol2);
-            result = (result << 3) | (result & 0xFFFF >> (16-3));
+            result = (result << shift) | ((result & 0xFFFF) >> (16 - shift));
 
             char result1 = result >> 8;
             char result2 = result;
@@ -42,35 +45,32 @@ int main(int argc, const char* argv[]) {
         }
 
         file.close();
-    }
-
-    else if (mode == "decryption") {
-        int pass,result;
-        std::cout<< "Enter your Password:" ;
-        std::cin>> pass;
+    } else if (mode == "decryption") {
+        unsigned int pass, result;
+        std::cout << "Enter your Password:";
+        std::cin >> pass;
         srand(pass);
-        int n;
-        std::vector<char>vec;
-        std::ifstream file("file", std::ios::binary);
-        while (!file.eof())
-        {
-            file >> n;
-            vec.push_back(n);
-        }
+        std::ifstream file;
+        file.open("file", std::ios::binary);
+        std::vector<char> vec((std::istreambuf_iterator<char>(file)),
+                              std::istreambuf_iterator<char>());
         file.close();
-        const char* byte_array = vec.data();
-        for (int i = 0; i < vec.size(); i+=2) {
-            char symbol1 = byte_array[i];
-            char symbol2 = (i + 1 <vec.size()) ? byte_array[i + 1] : static_cast<char>(0);
-            int g = rand();
-            result = (static_cast<int>(symbol1) << 8) | static_cast<int>(symbol2);
-            result = ((result & 0xFFFF) >> 3) | (result << (16 - 3));
+        std::vector<char> inference(vec.size());
+        for (int i = 0; i < vec.size(); i += 2) {
+            char symbol1 = vec[i];
+            char symbol2 = (i + 1 < vec.size()) ? vec[i + 1] : static_cast<char>(0);
+            unsigned int g = rand();
+            result = ((static_cast<int>(symbol1) << 8u) | (static_cast<int>(symbol2)));
+            result = ((result & 0xFFFF) >> shift) | (result << (16 - shift));
             result ^= g;
-            std::cout << result;
+            unsigned char result1 = result >> 8;
+            unsigned char result2 = result;
+            inference[i] = result1;
+            inference[i + 1] = result2;
+        }
+        for (int i = 0; i < inference.size(); i++) {
+            std::cout << inference[i];
         }
     }
-
-
-
     return 0;
 }
