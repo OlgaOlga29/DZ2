@@ -6,7 +6,7 @@
 
 //режим encryption/decryption необходимо указать в Edit Configurations
 int main(int argc, const char *argv[]) {
-    int shift = 0;
+    int shift = 3;
     if (argc != 3) {
         std::cerr << "Error: Use three parameters\n";
         return 5;
@@ -35,7 +35,7 @@ int main(int argc, const char *argv[]) {
             char symbol1 = byte_array[i];
             char symbol2 = (i + 1 < size) ? byte_array[i + 1] : static_cast<char>(0);
             unsigned int g = rand();
-            result = g ^ (static_cast<int>(symbol1) << 8) | g ^ static_cast<int>(symbol2);
+            result = g ^ (static_cast<int>(symbol1) << 8 | static_cast<int>(symbol2));
             result = (result << shift) | ((result & 0xFFFF) >> (16 - shift));
 
             char result1 = result >> 8;
@@ -60,7 +60,7 @@ int main(int argc, const char *argv[]) {
             char symbol1 = vec[i];
             char symbol2 = (i + 1 < vec.size()) ? vec[i + 1] : static_cast<char>(0);
             unsigned int g = rand();
-            result = ((static_cast<int>(symbol1) << 8u) | (static_cast<int>(symbol2)));
+            result = static_cast<int>(symbol1) << 8u & 0xFF00 | static_cast<int>(symbol2) & 0x00FF;
             result = ((result & 0xFFFF) >> shift) | (result << (16 - shift));
             result ^= g;
             unsigned char result1 = result >> 8;
